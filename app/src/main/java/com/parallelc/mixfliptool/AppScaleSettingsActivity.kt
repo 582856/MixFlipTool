@@ -176,8 +176,8 @@ fun MainScreen(viewModel: AppScaleSettingsViewModel) {
     LaunchedEffect(showSystemApps, text) { listState.scrollToItem(0) }
 
     Scaffold(topBar = {
-        TopAppBar(title = "MixFlipTool", actions = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        SmallTopAppBar(title = "MixFlipTool", actions = {
+            Row(Modifier.padding(end = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("系统应用", style = MiuixTheme.textStyles.footnote1)
                 Spacer(Modifier.width(8.dp))
                 Switch(checked = showSystemApps, onCheckedChange = viewModel::setShowSystemApps,
