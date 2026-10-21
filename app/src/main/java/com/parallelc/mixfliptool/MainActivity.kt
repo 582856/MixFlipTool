@@ -39,6 +39,8 @@ class MainActivity : ComponentActivity() {
     private var chooseAuthorization by mutableStateOf(false)
     private var appsPermissionRequested = false
     private var checkingPermissions = false
+    private var initialCheck = true
+    private var showPermissionPage by mutableStateOf(false)
 
     private val appsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -110,6 +112,10 @@ class MainActivity : ComponentActivity() {
             checkingPermissions = false
             if (rootOnly) busy = false
             message = if (privileged) "" else "点击第一项，选择 Root 或 Shizuku 授权。"
+            if (initialCheck) {
+                initialCheck = false
+                if (privileged && installedApps) enterApplication() else showPermissionPage = true
+            }
         }
     }
 
@@ -133,11 +139,15 @@ class MainActivity : ComponentActivity() {
             runCatching {
                 withContext(Dispatchers.IO) { allowStartApps() && configAppScale() }
             }.onSuccess { success ->
-                if (success) startActivity(Intent(this@MainActivity, AppScaleSettingsActivity::class.java))
+                if (success) {
+                    startActivity(Intent(this@MainActivity, AppScaleSettingsActivity::class.java))
+                    finish()
+                } else showPermissionPage = true
                 message = if (success) "配置已应用。" else "配置失败，请重新检测权限。"
             }.onFailure { exception ->
                 Log.e("mixfliptool", "配置失败", exception)
                 message = "配置失败：${exception.message ?: "请重新授权后重试"}"
+                showPermissionPage = true
             }
             busy = false
         }
@@ -228,6 +238,10 @@ class MainActivity : ComponentActivity() {
         Shizuku.addBinderReceivedListener(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
         setContent {
+            if (!showPermissionPage) {
+                LaunchScreen()
+                return@setContent
+            }
             PermissionScreen(privileged, installedApps, busy, message, chooseAuthorization,
                 onPrivilegeClick = { chooseAuthorization = true },
                 onAppsClick = { requestInstalledApps() },

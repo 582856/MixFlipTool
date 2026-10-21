@@ -2,6 +2,7 @@ package com.parallelc.mixfliptool
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.pm.ApplicationInfo
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.widget.Toast
@@ -19,7 +20,8 @@ data class AppInfo(
     val icon: Drawable,
     val appName: String,
     val packageName: String,
-    var scale: String
+    var scale: String,
+    val isSystem: Boolean = false
 )
 
 class AppScaleSettingsViewModel(private val context: Context) : ViewModel() {
@@ -27,6 +29,15 @@ class AppScaleSettingsViewModel(private val context: Context) : ViewModel() {
 
     private val _appList = MutableStateFlow<List<AppInfo>>(emptyList())
     val appList: StateFlow<List<AppInfo>> = _appList
+
+    private val uiPreferences = context.getSharedPreferences("ui_preferences", Context.MODE_PRIVATE)
+    private val _showSystemApps = MutableStateFlow(uiPreferences.getBoolean("show_system_apps", false))
+    val showSystemApps: StateFlow<Boolean> = _showSystemApps
+
+    fun setShowSystemApps(show: Boolean) {
+        _showSystemApps.value = show
+        uiPreferences.edit().putBoolean("show_system_apps", show).apply()
+    }
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
@@ -73,7 +84,8 @@ class AppScaleSettingsViewModel(private val context: Context) : ViewModel() {
                         icon = appIcon,
                         appName = appName,
                         packageName = appInfo.packageName,
-                        scale = preferences[appInfo.packageName] ?: ""
+                        scale = preferences[appInfo.packageName] ?: "",
+                        isSystem = appInfo.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
                     )
                 }.sortedWith(compareBy({ it.scale.isEmpty() }, { it.appName } ))
             }
