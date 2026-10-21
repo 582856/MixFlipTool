@@ -4,6 +4,8 @@
 
 免root一键配置Mix Flip外屏 添加和使用任意应用 + 系统应用恢复默认样式
 
+此 fork 增加 Root 自动授权：首次点击应用时，在 Root 管理器中允许授权，即可自动获取 DUMP 权限，无需电脑或 Shizuku。原有功能及授权方式保留。
+
 ## 目录
 - [功能效果展示](#功能效果展示)
    - [外屏添加和使用任意应用](#外屏添加和使用任意应用)
@@ -42,15 +44,17 @@
 
 ### 授权（安装后只需执行一次）
 
-相关功能依赖于DUMP权限，因此在安装后，需要向应用进行一次授权，方法有2种：
+相关功能依赖于DUMP权限，因此在安装后，需要向应用进行一次授权，方法有3种：
 
-1. 通过ADB授权，手机开启USB调试和USB调试（安全设置）后，连接电脑，命令行里执行
+1. **Root 自动授权（此 fork 新增）**：已 Root 的手机直接点击 MixFlipTool，在 Magisk / KernelSU / APatch 等 Root 管理器的弹窗中允许授权。授权在后台执行，最多等待 60 秒，成功后继续一键配置；没有 Root 或拒绝授权时，仍可使用下面的 ADB / Shizuku 方式。多用户环境下只为当前用户授予 DUMP 权限。
+
+2. 通过ADB授权，手机开启USB调试和USB调试（安全设置）后，连接电脑，命令行里执行
 
 ```
 adb shell pm grant com.parallelc.mixfliptool android.permission.DUMP 
 ```
 
-2. 通过[Shizuku](https://github.com/RikkaApps/Shizuku)授权，启动Shizuku后，点击MixFlipTool，会出现弹窗，选择`始终允许`
+3. 通过[Shizuku](https://github.com/RikkaApps/Shizuku)授权，启动Shizuku后，点击MixFlipTool，会出现弹窗，选择`始终允许`
 
 <img src="/imgs/shizuku.jpg" width="33%" alt="Shizuku">
 
@@ -111,6 +115,12 @@ adb shell pm grant com.parallelc.mixfliptool android.permission.DUMP
 如果不想进入它们的外屏启动页，可使用旧版本或通过第三方启动器应用启动
 
 ## 发布日志
+
+### 1.1.3-root
+
+- 首次运行时支持通过 Root 自动授予 DUMP 权限，保留 ADB 和 Shizuku 授权。
+- Root 授权在后台线程执行，避免等待授权弹窗时阻塞界面。
+- 此 fork 的 APK 使用不同签名，安装前需卸载原版（会清除原版的缩放设置）。
 
 ### 1.1.2
 

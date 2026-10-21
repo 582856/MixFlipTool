@@ -8,16 +8,40 @@ import android.os.ResultReceiver
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 import java.io.IOException
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 
 class MainActivity : AppCompatActivity() {
+
+    private fun grantDumpPermissionWithRoot(): Boolean {
+        var process: Process? = null
+        return try {
+            val userId = android.os.Process.myUserHandle().identifier
+            process = ProcessBuilder(
+                "su", "-c",
+                "pm grant --user $userId $packageName android.permission.DUMP"
+            ).redirectErrorStream(true).start()
+            process.outputStream.close()
+            process.waitFor(60, TimeUnit.SECONDS) && process.exitValue() == 0 &&
+                checkSelfPermission(android.Manifest.permission.DUMP) == PackageManager.PERMISSION_GRANTED
+        } catch (e: IOException) {
+            Log.d("mixfliptool", "Root授权不可用", e)
+            false
+        } finally {
+            process?.destroy()
+        }
+    }
 
     private fun checkShizukuPermission(code: Int): Boolean {
         if (Shizuku.isPreV11()) {
@@ -41,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     private fun allowStartApps(): Boolean {
         if (checkSelfPermission(android.Manifest.permission.DUMP) != PackageManager.PERMISSION_GRANTED) {
             if (!Shizuku.pingBinder() || !checkShizukuPermission(0)) {
-                Toast.makeText(this, "没有权限！请通过ADB或Shizuku授权！", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "没有权限！请允许Root授权，或通过ADB或Shizuku授权！", Toast.LENGTH_SHORT).show()
                 return false
             }
             val iPmClass = Class.forName("android.content.pm.IPackageManager")
@@ -114,14 +138,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        runCatching {
-            allowStartApps() && configAppScale()
-        }.onFailure { exception ->
-            Log.e("mixfliptool", exception.stackTraceToString())
-            Toast.makeText(this, "配置失败！", Toast.LENGTH_SHORT).show()
-        }.onSuccess { result ->
-            if (result) Toast.makeText(this, "配置成功！", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            runCatching {
+                if (checkSelfPermission(android.Manifest.permission.DUMP) != PackageManager.PERMISSION_GRANTED) {
+                    withContext(Dispatchers.IO) { grantDumpPermissionWithRoot() }
+                }
+                allowStartApps() && configAppScale()
+            }.onFailure { exception ->
+                Log.e("mixfliptool", exception.stackTraceToString())
+                Toast.makeText(this@MainActivity, "配置失败！", Toast.LENGTH_SHORT).show()
+            }.onSuccess { result ->
+                if (result) Toast.makeText(this@MainActivity, "配置成功！", Toast.LENGTH_SHORT).show()
+            }
+            finish()
         }
-        finish()
     }
 }
