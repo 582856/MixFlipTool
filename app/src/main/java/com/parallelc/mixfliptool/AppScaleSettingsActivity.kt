@@ -62,6 +62,8 @@ class AppScaleSettingsActivity : ComponentActivity() {
             return
         }
         enableEdgeToEdge()
+        window.isNavigationBarContrastEnforced = false
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
         setContent {
             MiuixTheme(colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
                 MainScreen(viewModel)
@@ -183,7 +185,9 @@ fun MainScreen(viewModel: AppScaleSettingsViewModel) {
             }
         })
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+        Column(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(),
+            start = padding.calculateLeftPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+            end = padding.calculateRightPadding(androidx.compose.ui.unit.LayoutDirection.Ltr))) {
             TextField(value = text, onValueChange = { text = it }, label = "搜索应用或包名",
                 useLabelAsPlaceholder = true, singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
@@ -198,7 +202,8 @@ fun MainScreen(viewModel: AppScaleSettingsViewModel) {
             PullToRefresh(isRefreshing = isRefreshing, onRefresh = viewModel::refreshApplications,
                 modifier = Modifier.weight(1f).fillMaxWidth()) {
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp,
+                        bottom = 20.dp + padding.calculateBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(visibleApps, key = { it.packageName }) { app ->
                         Card(onClick = { selectedApp = app }, insideMargin = PaddingValues(16.dp)) {

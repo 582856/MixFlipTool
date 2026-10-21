@@ -233,6 +233,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.isNavigationBarContrastEnforced = false
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
         appsPermissionRequested = savedInstanceState?.getBoolean("appsPermissionRequested") ?: false
         Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
         Shizuku.addBinderReceivedListener(binderReceivedListener)
