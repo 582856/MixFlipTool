@@ -1,6 +1,8 @@
 package com.parallelc.mixfliptool
 
 import android.os.Bundle
+import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -74,6 +76,11 @@ class AppScaleSettingsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!permissionsReady()) {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
         enableEdgeToEdge()
         actionBar?.hide()
         setContent {
@@ -93,6 +100,18 @@ class AppScaleSettingsActivity : ComponentActivity() {
         }
 
         viewModel.refreshApplications()
+    }
+
+    private fun permissionsReady() =
+        checkSelfPermission(android.Manifest.permission.DUMP) == PackageManager.PERMISSION_GRANTED &&
+            hasInstalledAppsPermission(this)
+
+    override fun onResume() {
+        super.onResume()
+        if (!permissionsReady()) {
+            startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+            finish()
+        }
     }
 }
 

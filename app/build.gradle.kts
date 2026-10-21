@@ -1,18 +1,19 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.parallelc.mixfliptool"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.parallelc.mixfliptool"
         minSdk = 33
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.1.4-root"
+        versionCode = 7
+        versionName = "1.2.0-root"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -39,9 +40,6 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -50,6 +48,7 @@ android {
 }
 
 dependencies {
+    implementation("top.yukonga.miuix.kmp:miuix:0.6.1")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
