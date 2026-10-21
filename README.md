@@ -116,6 +116,10 @@ adb shell pm grant com.parallelc.mixfliptool android.permission.DUMP
 
 ## 发布日志
 
+### 1.1.4-root
+
+- 修复首次等待 Root 授权时，透明窗口与 AppCompat 主题不兼容导致的闪退。
+
 ### 1.1.3-root
 
 - 首次运行时支持通过 Root 自动授予 DUMP 权限，保留 ADB 和 Shizuku 授权。

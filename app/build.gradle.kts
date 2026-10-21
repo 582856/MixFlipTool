@@ -11,8 +11,8 @@ android {
         applicationId = "com.parallelc.mixfliptool"
         minSdk = 33
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.1.3-root"
+        versionCode = 6
+        versionName = "1.1.4-root"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
