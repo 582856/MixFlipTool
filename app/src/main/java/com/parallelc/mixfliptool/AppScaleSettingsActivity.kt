@@ -3,6 +3,11 @@ package com.parallelc.mixfliptool
 import android.os.Bundle
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.IBinder
+import android.os.ParcelFileDescriptor
+import android.os.ResultReceiver
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +42,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.lsposed.hiddenapibypass.HiddenApiBypass
+import rikka.shizuku.SystemServiceHelper
+import java.io.IOException
+import java.util.concurrent.Executors
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.darkColorScheme
@@ -57,7 +69,8 @@ class AppScaleSettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!permissionsReady()) {
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
             finish()
             return
         }
@@ -81,6 +94,15 @@ class AppScaleSettingsActivity : ComponentActivity() {
         }
 
         viewModel.refreshApplications()
+        lifecycleScope.launch {
+            val result = runCatching {
+                withContext(Dispatchers.IO) { allowStartApps() && configAppScale() }
+            }
+            if (!result.getOrDefault(false)) {
+                Log.e("mixfliptool", "配置失败", result.exceptionOrNull())
+                Toast.makeText(this@AppScaleSettingsActivity, "配置失败，请重试。", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun permissionsReady() =
@@ -89,10 +111,68 @@ class AppScaleSettingsActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (!permissionsReady()) {
-            startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+        if (!isFinishing && !permissionsReady()) {
+            startActivity(Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
             finish()
         }
+    }
+
+    private fun allowStartApps(): Boolean {
+        if (checkSelfPermission(android.Manifest.permission.DUMP) != PackageManager.PERMISSION_GRANTED) {
+            return false
+        }
+        if (!hasInstalledAppsPermission(this)) return false
+
+        val apps = packageManager.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0L)).map { packageInfo -> packageInfo.packageName }.sorted()
+        if (apps.size == 1) {
+            return false
+        }
+
+        val pipe = ParcelFileDescriptor.createPipe()
+
+        val executor = Executors.newSingleThreadExecutor()
+        executor.submit {
+            try {
+                ParcelFileDescriptor.AutoCloseInputStream(pipe[0]).use { inputStream ->
+                    val buffer = ByteArray(1024)
+                    var readBytes: Int
+                    while (inputStream.read(buffer).also { readBytes = it } != -1) {
+                        val message = String(buffer, 0, readBytes)
+                        Log.d("mixfliptool", "allowStartApps: $message")
+                    }
+                }
+            } catch (e: IOException) {
+                Log.e("mixfliptool", "allowStartApps: ", e)
+            }
+        }
+
+        val windowManager = SystemServiceHelper.getSystemService("window")
+        try {
+            windowManager.dump(pipe[1].fileDescriptor, arrayOf("-setForceDisplayCompatMode", apps.joinToString(":"), "allowstart"))
+        } finally {
+            pipe[1].close()
+            executor.shutdown()
+        }
+        return true
+    }
+
+    private fun configAppScale(): Boolean {
+        val miuiSizeCompat = SystemServiceHelper.getSystemService("MiuiSizeCompat")
+        val pipe = ParcelFileDescriptor.createPipe()
+        val pipeIn = pipe[0].fileDescriptor
+        val pipeOut = pipe[1].fileDescriptor
+        val shellCallback = HiddenApiBypass.newInstance(Class.forName("android.os.ShellCallback"))
+        val resultReceiver = ResultReceiver(null)
+        HiddenApiBypass.invoke(IBinder::class.java, miuiSizeCompat, "shellCommand", pipeIn, pipeOut, pipeOut, arrayOf("reload-rule"), shellCallback, resultReceiver)
+
+        val context = this
+        runBlocking { AppScaleManager(context).getAllPreferences() }.forEach { (packageName, scale) ->
+            HiddenApiBypass.invoke(IBinder::class.java, miuiSizeCompat, "shellCommand", pipeIn, pipeOut, pipeOut, arrayOf("update-rule", packageName, "enable::true"), shellCallback, resultReceiver)
+            HiddenApiBypass.invoke(IBinder::class.java, miuiSizeCompat, "shellCommand", pipeIn, pipeOut, pipeOut, arrayOf("update-rule", packageName, "scale::$scale"), shellCallback, resultReceiver)
+            HiddenApiBypass.invoke(IBinder::class.java, miuiSizeCompat, "shellCommand", pipeIn, pipeOut, pipeOut, arrayOf("update-rule", packageName, "activityRule::null"), shellCallback, resultReceiver)
+        }
+        return true
     }
 }
 

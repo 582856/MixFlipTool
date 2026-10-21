@@ -9,6 +9,6 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.parallelc.mixfliptool"
-            android:targetClass="com.parallelc.mixfliptool.MainActivity" />
+            android:targetClass="com.parallelc.mixfliptool.AppScaleSettingsActivity" />
     </shortcut>
 </shortcuts>

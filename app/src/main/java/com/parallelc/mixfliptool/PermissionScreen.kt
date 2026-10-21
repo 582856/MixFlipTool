@@ -35,17 +35,6 @@ fun hasInstalledAppsPermission(context: Context): Boolean = try {
 }
 
 @Composable
-fun LaunchScreen() {
-    MiuixTheme(colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
-        Scaffold {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("MixFlipTool", style = MiuixTheme.textStyles.title2)
-            }
-        }
-    }
-}
-
-@Composable
 fun PermissionScreen(
     privileged: Boolean, installedApps: Boolean, busy: Boolean, message: String,
     chooseAuthorization: Boolean, onPrivilegeClick: () -> Unit, onAppsClick: () -> Unit,
