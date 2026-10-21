@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
     private var message by mutableStateOf("")
     private var chooseAuthorization by mutableStateOf(false)
     private var appsPermissionRequested = false
+    private var checkingPermissions = false
 
     private val appsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -97,22 +98,23 @@ class MainActivity : ComponentActivity() {
 
     private fun refreshPermissions(rootOnly: Boolean = false) {
         installedApps = hasInstalledAppsPermission(this)
-        if (busy) return
-        busy = true
-        privileged = false
+        if (busy || checkingPermissions) return
+        checkingPermissions = true
+        if (rootOnly) busy = true
         lifecycleScope.launch {
             privileged = withContext(Dispatchers.IO) {
                 (!rootOnly && runCatching { grantDumpPermissionWithShizuku() }.getOrDefault(false)) ||
                     grantDumpPermissionWithRoot()
             }
             installedApps = hasInstalledAppsPermission(this@MainActivity)
-            busy = false
+            checkingPermissions = false
+            if (rootOnly) busy = false
             message = if (privileged) "" else "点击第一项，选择 Root 或 Shizuku 授权。"
         }
     }
 
     private fun requestInstalledApps() {
-        if (!privileged || busy) return
+        if (!privileged || busy || checkingPermissions) return
         if (hasInstalledAppsPermission(this)) {
             installedApps = true
         } else if (appsPermissionRequested &&
@@ -125,7 +127,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun enterApplication() {
-        if (busy || !privileged || !hasInstalledAppsPermission(this)) return
+        if (busy || checkingPermissions || !privileged || !hasInstalledAppsPermission(this)) return
         busy = true
         lifecycleScope.launch {
             runCatching {

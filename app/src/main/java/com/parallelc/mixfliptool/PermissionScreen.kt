@@ -54,7 +54,7 @@ fun PermissionScreen(
                 Spacer(Modifier.height(20.dp))
                 PermissionItem("Root 或 Shizuku", "用于配置外屏应用和缩放规则", privileged,
                     !busy, onPrivilegeClick)
-                PermissionItem("应用列表", if (privileged) "用于读取和管理已安装的应用" else "请先完成 Root 或 Shizuku 授权",
+                PermissionItem("应用列表", "用于读取和管理已安装的应用",
                     installedApps, privileged && !busy, onAppsClick)
                 Text(if (busy) "正在检测或应用配置，请稍候…" else message,
                     modifier = Modifier.heightIn(min = 48.dp),
