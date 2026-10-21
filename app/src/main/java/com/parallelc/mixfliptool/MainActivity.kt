@@ -27,7 +27,9 @@ class MainActivity : AppCompatActivity() {
     private fun grantDumpPermissionWithRoot(): Boolean {
         var process: Process? = null
         return try {
-            val userId = android.os.Process.myUserHandle().identifier
+            val userId = HiddenApiBypass.invoke(
+                android.os.UserHandle::class.java, android.os.Process.myUserHandle(), "getIdentifier"
+            ) as Int
             process = ProcessBuilder(
                 "su", "-c",
                 "pm grant --user $userId $packageName android.permission.DUMP"
