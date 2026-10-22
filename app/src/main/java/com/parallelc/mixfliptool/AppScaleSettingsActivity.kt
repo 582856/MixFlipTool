@@ -93,7 +93,6 @@ class AppScaleSettingsActivity : ComponentActivity() {
             }
         }
 
-        viewModel.refreshApplications()
         lifecycleScope.launch {
             val result = runCatching {
                 withContext(Dispatchers.IO) { allowStartApps() && configAppScale() }
@@ -115,6 +114,8 @@ class AppScaleSettingsActivity : ComponentActivity() {
             startActivity(Intent(this, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
             finish()
+        } else if (!isFinishing) {
+            viewModel.loadApplications()
         }
     }
 
@@ -124,7 +125,7 @@ class AppScaleSettingsActivity : ComponentActivity() {
         }
         if (!hasInstalledAppsPermission(this)) return false
 
-        val apps = packageManager.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0L)).map { packageInfo -> packageInfo.packageName }.sorted()
+        val apps = AppListCache.load(this).map { it.packageName }.sorted()
         if (apps.size == 1) {
             return false
         }
