@@ -125,7 +125,7 @@ class AppScaleSettingsActivity : ComponentActivity() {
         }
         if (!hasInstalledAppsPermission(this)) return false
 
-        val apps = AppListCache.load(this).map { it.packageName }.sorted()
+        val apps = AppListCache.load(applicationContext).map { it.packageName }.sorted()
         if (apps.size == 1) {
             return false
         }
