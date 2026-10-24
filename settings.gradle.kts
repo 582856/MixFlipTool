@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MixFlipTool"
 include(":app")
- 
+include(":libxposed-stubs")

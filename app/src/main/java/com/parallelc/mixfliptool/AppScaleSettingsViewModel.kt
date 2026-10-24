@@ -40,8 +40,11 @@ class AppScaleSettingsViewModel(private val context: Context) : ViewModel() {
         uiPreferences.edit().putBoolean("show_system_apps", show).apply()
     }
 
-    private val _isRefreshing = MutableStateFlow(false)
+    private val _isRefreshing = MutableStateFlow(true)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
+    private val _loadError = MutableStateFlow<String?>(null)
+    val loadError: StateFlow<String?> = _loadError
 
     private val _requestPermission = MutableStateFlow(false)
     val requestPermission: StateFlow<Boolean> = _requestPermission
@@ -72,13 +75,15 @@ class AppScaleSettingsViewModel(private val context: Context) : ViewModel() {
             loadApplications()
         } else {
             _isRefreshing.value = false
+            _loadError.value = "请先授权应用列表，再下拉刷新。"
             Toast.makeText(context, "获取应用列表失败！", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun loadApplicationList(forceRefresh: Boolean) {
         loadJob = viewModelScope.launch {
-            _isRefreshing.value = forceRefresh || (_appList.value.isEmpty() && !AppListCache.exists(context))
+            _isRefreshing.value = forceRefresh || _appList.value.isEmpty()
+            _loadError.value = null
             try {
                 val apps = withContext(Dispatchers.IO) { AppListCache.load(context, forceRefresh) }
                 val preferences = withContext(Dispatchers.IO) { appScaleManager.getAllPreferences() }
@@ -88,6 +93,7 @@ class AppScaleSettingsViewModel(private val context: Context) : ViewModel() {
                 throw exception
             } catch (exception: Exception) {
                 Log.e("mixfliptool", "获取应用列表失败", exception)
+                _loadError.value = "应用列表加载失败，请下拉刷新。"
                 Toast.makeText(context, "获取应用列表失败！", Toast.LENGTH_SHORT).show()
             } finally {
                 _isRefreshing.value = false

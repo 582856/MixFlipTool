@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="xposed_scope">
+        <item>system</item>
+        <item>android</item>
+        <item>com.android.systemui</item>
+    </string-array>
+</resources>

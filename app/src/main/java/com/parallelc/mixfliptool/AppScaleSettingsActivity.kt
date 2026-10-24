@@ -9,6 +9,7 @@ import android.os.ResultReceiver
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
@@ -79,7 +81,8 @@ class AppScaleSettingsActivity : ComponentActivity() {
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
         setContent {
             MiuixTheme(colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
-                MainScreen(viewModel)
+                BackHandler { returnHome() }
+                MainScreen(viewModel, onBack = { returnHome() })
             }
         }
 
@@ -102,6 +105,11 @@ class AppScaleSettingsActivity : ComponentActivity() {
                 Toast.makeText(this@AppScaleSettingsActivity, "配置失败，请重试。", Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun returnHome() {
+        if (isTaskRoot) startActivity(Intent(this, HomeActivity::class.java))
+        finish()
     }
 
     private fun permissionsReady() =
@@ -240,9 +248,10 @@ fun ScaleDialog(appInfo: AppInfo, onDismiss: () -> Unit, onScaleChange: (String)
 }
 
 @Composable
-fun MainScreen(viewModel: AppScaleSettingsViewModel) {
+fun MainScreen(viewModel: AppScaleSettingsViewModel, onBack: () -> Unit) {
     val appList by viewModel.appList.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val loadError by viewModel.loadError.collectAsState()
     val showSystemApps by viewModel.showSystemApps.collectAsState()
     var text by rememberSaveable { mutableStateOf("") }
     var selectedApp by remember { mutableStateOf<AppInfo?>(null) }
@@ -257,8 +266,12 @@ fun MainScreen(viewModel: AppScaleSettingsViewModel) {
     LaunchedEffect(showSystemApps, text) { listState.scrollToItem(0) }
 
     Scaffold(topBar = {
-        SmallTopAppBar(title = "MixFlipTool", actions = {
-            Row(Modifier.padding(end = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+        SmallTopAppBar(title = "外屏应用解锁", horizontalPadding = 0.dp, navigationIcon = {
+            IconButton(onClick = onBack, Modifier.padding(start = 12.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+            }
+        }, actions = {
+            Row(Modifier.padding(start = 12.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("系统应用", style = MiuixTheme.textStyles.footnote1)
                 Spacer(Modifier.width(8.dp))
                 Switch(checked = showSystemApps, onCheckedChange = viewModel::setShowSystemApps,
@@ -276,7 +289,7 @@ fun MainScreen(viewModel: AppScaleSettingsViewModel) {
                 trailingIcon = {
                     IconButton(onClick = { showResetDialog = true }) { Icon(Icons.Default.Restore, "重置缩放设置") }
                 })
-            Text(if (isRefreshing) "正在加载应用…" else "${visibleApps.size} 个应用",
+            Text(if (isRefreshing) "正在加载应用…" else loadError ?: "${visibleApps.size} 个应用",
                 modifier = Modifier.padding(horizontal = 26.dp, vertical = 8.dp),
                 style = MiuixTheme.textStyles.footnote1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
@@ -304,7 +317,7 @@ fun MainScreen(viewModel: AppScaleSettingsViewModel) {
                         }
                     }
                     if (visibleApps.isEmpty() && !isRefreshing) item {
-                        Text("没有匹配的应用", Modifier.padding(20.dp))
+                        Text(loadError ?: "没有匹配的应用", Modifier.padding(20.dp))
                     }
                 }
             }

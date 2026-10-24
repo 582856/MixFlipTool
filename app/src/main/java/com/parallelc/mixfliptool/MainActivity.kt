@@ -124,7 +124,7 @@ class MainActivity : ComponentActivity() {
 
     private fun enterApplication() {
         if (isFinishing || busy || checkingPermissions || !privileged || !hasInstalledAppsPermission(this)) return
-        startActivity(Intent(this, AppScaleSettingsActivity::class.java)
+        startActivity(Intent(this, HomeActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
         finish()
     }

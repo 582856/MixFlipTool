@@ -12,8 +12,8 @@ android {
         applicationId = "com.parallelc.mixfliptool"
         minSdk = 33
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.3.3"
+        versionCode = 13
+        versionName = "1.3.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -48,6 +48,8 @@ android {
 }
 
 dependencies {
+    compileOnly(project(":libxposed-stubs"))
+    compileOnly(files("libs/xposed-api-82.jar"))
     implementation("top.yukonga.miuix.kmp:miuix:0.6.1")
 
     implementation(libs.androidx.core.ktx)

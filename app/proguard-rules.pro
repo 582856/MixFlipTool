@@ -19,3 +19,13 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class com.parallelc.mixfliptool.DualScreenProcess { public static void main(java.lang.String[]); }
+-keep class com.parallelc.mixfliptool.DualScreenModuleEntry { *; }
+-keep class com.parallelc.mixfliptool.LegacyDualScreenEntry { *; }
+-dontwarn io.github.libxposed.api.**
+-dontwarn de.robv.android.xposed.**
+-keep class com.netease.cloudmusic.utils.xt { *; }
+-keepclassmembers class rikka.shizuku.Shizuku {
+    private static *** newProcess(java.lang.String[], java.lang.String[], java.lang.String);
+}
